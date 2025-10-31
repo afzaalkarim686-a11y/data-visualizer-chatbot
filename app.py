@@ -399,165 +399,117 @@ def main():
                         st.success("✅ Visualization created!")
                         
                        # ==============================
-# 📤 SHARE & EXPORT SECTION
-# ==============================
-st.divider()
-st.subheader("📤 Share & Export")
-
-import io
-import json
-import base64
-import os
-import plotly.io as pio
-from datetime import datetime
-
-col1, col2 = st.columns(2)
-
-with col1:
-    try:
-        # Export HTML (TEXT-BASED BUFFER)
-        html_buffer = io.StringIO()
-        fig.write_html(html_buffer, include_plotlyjs='cdn')
-        html_data = html_buffer.getvalue()
-
-        st.download_button(
-            label="📥 Download HTML",
-            data=html_data,
-            file_name=f"{chart_title.replace(' ', '_')}.html",
-            mime="text/html",
-            use_container_width=True
-        )
-    except Exception as e:
-        st.error(f"⚠️ HTML Export Failed: {e}")
-
-with col2:
-    try:
-        # Export PNG (requires kaleido)
-        png_bytes = pio.to_image(fig, format="png", width=1200, height=800)
-        st.download_button(
-            label="📸 Download PNG",
-            data=png_bytes,
-            file_name=f"{chart_title.replace(' ', '_')}.png",
-            mime="image/png",
-            use_container_width=True
-        )
-    except Exception as e:
-        st.info("ℹ️ PNG Export unavailable — Kaleido may not be installed or allowed here.")
-        st.caption(f"Error detail: {e}")
-
-# ==============================
-# 💾 SAVE CHART TO SESSION
-# ==============================
-if st.button("💾 Save to My Charts", use_container_width=True):
-    st.session_state.saved_charts.append({
-        'config': chart_config,
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    })
-    st.success(f"✅ Chart saved! You now have {len(st.session_state.saved_charts)} saved chart(s).")
-
-# ==============================
-# 🔗 SHAREABLE LINK
-# ==============================
-st.subheader("🔗 Shareable Link")
-
-try:
-    # Encode chart config to base64 for URL
-    config_json = json.dumps(chart_config)
-    config_encoded = base64.urlsafe_b64encode(config_json.encode()).decode()
-
-    # Determine base URL
-    replit_url = os.getenv('REPLIT_DEV_DOMAIN') or os.getenv('REPLIT_DEPLOYMENT_URL')
-    base_url = f"https://{replit_url}" if replit_url else "http://localhost:8501"
-
-    shareable_url = f"{base_url}?chart={config_encoded}"
-
-    st.text_input(
-        "Copy this link to share:",
-        value=shareable_url,
-        key="shareable_link",
-        help="Anyone with this link can view the chart configuration. They'll need the same dataset to recreate it."
-    )
-    st.caption("📋 Share this link with colleagues who have the same dataset to recreate this visualization.")
-except Exception as e:
-    st.error(f"Share link creation failed: {e}")
-
-# ==============================
-# 📄 OPTIONAL: VIEW CHART CONFIG JSON
-# ==============================
-with st.expander("📄 View Chart Configuration (Alternative)"):
-    st.code(json.dumps(chart_config, indent=2), language="json")
-    st.caption("Copy and paste this JSON configuration to share manually.")
-
-# ==============================
-# 📊 DISPLAY SAVED CHARTS
-# ==============================
-if st.session_state.saved_charts:
-    st.divider()
-    st.subheader("💾 My Saved Charts")
-
-    for idx, saved_chart in enumerate(st.session_state.saved_charts):
-        with st.expander(f"Chart {idx + 1}: {saved_chart['config']['title']} - {saved_chart['timestamp']}"):
-            st.json(saved_chart['config'])
-            col1, col2 = st.columns(2)
-
-            with col1:
-                if st.button(f"📊 Recreate", key=f"recreate_{idx}"):
-                    config = saved_chart['config']
-                    recreated_fig = create_chart(
-                        df,
-                        config['type'],
-                        config['x'],
-                        config['y'],
-                        config['color'],
-                        config['title'],
-                        config.get('color_scheme', 'plotly')
-                    )
-                    if recreated_fig:
-                        st.plotly_chart(recreated_fig, use_container_width=True)
-
-            with col2:
-                if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
-                    st.session_state.saved_charts.pop(idx)
-                    st.rerun()
-
-st.info("💡 **Tip:** Right-click the chart to download as PNG or interact using touch gestures on mobile.")
-
-    
-    # ============================================
-# 📊 MAIN APPLICATION ENTRY POINT
-# ============================================
-
-def main():
-    st.set_page_config(page_title="Data Visualizer Chatbot", layout="wide")
-    st.title("📈 Data Visualizer Chatbot")
-
-    # Initialize session state
-    if "df" not in st.session_state:
-        st.session_state.df = None
-    if "saved_charts" not in st.session_state:
-        st.session_state.saved_charts = []
-
-    # Sidebar upload
-    uploaded_file = st.sidebar.file_uploader("📤 Upload your data file (CSV or Excel)", type=["csv", "xlsx"])
-
-    if uploaded_file is not None:
-        # Load the uploaded dataset
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_excel(uploaded_file)
-            st.session_state.df = df
-            st.success(f"✅ File '{uploaded_file.name}' uploaded successfully!")
-            # Continue to visualization interface
-            show_data_interface(df)
-        except Exception as e:
-            st.error(f"❌ Failed to read file: {e}")
-
+                        st.divider()
+                        st.subheader("📤 Share & Export")
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Download as HTML
+                            html_buffer = BytesIO()
+                            fig.write_html(html_buffer)
+                            html_bytes = html_buffer.getvalue()
+                            
+                            st.download_button(
+                                label="📥 Download HTML",
+                                data=html_bytes,
+                                file_name=f"{chart_title.replace(' ', '_')}.html",
+                                mime="text/html",
+                                use_container_width=True
+                            )
+                        
+                        with col2:
+                            # Download as PNG
+                            img_bytes = fig.to_image(format="png", width=1200, height=800)
+                            
+                            st.download_button(
+                                label="📸 Download PNG",
+                                data=img_bytes,
+                                file_name=f"{chart_title.replace(' ', '_')}.png",
+                                mime="image/png",
+                                use_container_width=True
+                            )
+                        
+                        # Save to collection
+                        if st.button("💾 Save to My Charts", use_container_width=True):
+                            st.session_state.saved_charts.append({
+                                'config': chart_config,
+                                'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+                            })
+                            st.success(f"Saved! You now have {len(st.session_state.saved_charts)} saved chart(s).")
+                        
+                        # Shareable link generation
+                        st.subheader("🔗 Shareable Link")
+                        
+                        # Encode chart config to base64 for URL
+                        config_json = json.dumps(chart_config)
+                        config_encoded = base64.urlsafe_b64encode(config_json.encode()).decode()
+                        
+                        # Generate shareable URL with query parameter
+                        import os
+                        replit_url = os.getenv('REPLIT_DEV_DOMAIN')
+                        if replit_url:
+                            base_url = f"https://{replit_url}"
+                        else:
+                            # Try to get from deployment URL
+                            replit_url = os.getenv('REPLIT_DEPLOYMENT_URL')
+                            if replit_url:
+                                base_url = replit_url
+                            else:
+                                # Fallback for local development
+                                base_url = "http://localhost:5000"
+                        
+                        shareable_url = f"{base_url}?chart={config_encoded}"
+                        
+                        # Display shareable link
+                        st.text_input(
+                            "Copy this link to share:",
+                            value=shareable_url,
+                            key="shareable_link",
+                            help="Anyone with this link can view the chart configuration. They'll need the same dataset to recreate it."
+                        )
+                        
+                        st.caption("📋 Share this link with colleagues who have the same dataset to recreate this visualization")
+                        
+                        # Alternative: Chart configuration for manual sharing
+                        with st.expander("📄 View Chart Configuration (Alternative)"):
+                            st.code(json.dumps(chart_config, indent=2), language="json")
+                            st.caption("Copy and paste this JSON configuration to share manually")
+                        
+                        st.info("💡 **Tip:** Right-click the chart to download as PNG or interact with it using touch gestures on mobile.")
+            
+            # Display saved charts
+            if st.session_state.saved_charts:
+                st.divider()
+                st.subheader("💾 My Saved Charts")
+                
+                for idx, saved_chart in enumerate(st.session_state.saved_charts):
+                    with st.expander(f"Chart {idx + 1}: {saved_chart['config']['title']} - {saved_chart['timestamp']}"):
+                        st.json(saved_chart['config'])
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button(f"📊 Recreate", key=f"recreate_{idx}"):
+                                config = saved_chart['config']
+                                recreated_fig = create_chart(
+                                    df, 
+                                    config['type'], 
+                                    config['x'], 
+                                    config['y'], 
+                                    config['color'], 
+                                    config['title'],
+                                    config.get('color_scheme', 'plotly')
+                                )
+                                if recreated_fig:
+                                    st.plotly_chart(recreated_fig, use_container_width=True)
+                        
+                        with col2:
+                            if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
+                                st.session_state.saved_charts.pop(idx)
+                                st.rerun() 
+                        
     else:
-        # ==============================
-        # WELCOME SCREEN (no file yet)
-        # ==============================
+        # Welcome screen
         st.markdown("""
         ### Welcome to the Data Analysis Tool! 👋
         
@@ -572,6 +524,7 @@ def main():
 
         # Sample data option
         if st.button("📂 Try with Sample Data"):
+            # Create sample dataset
             sample_df = pd.DataFrame({
                 'Date': pd.date_range('2024-01-01', periods=50, freq='D'),
                 'Sales': np.random.randint(1000, 5000, 50),
@@ -582,10 +535,6 @@ def main():
             st.session_state.df = sample_df
             st.rerun()
 
-
-# ============================================
-# 🚀 APP LAUNCHER
-# ============================================
 if __name__ == "__main__":
-    main()
+           main()
 
